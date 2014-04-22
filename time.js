@@ -1,4 +1,5 @@
-TIME = 1000000;
+var _ = _;
+var TIME = 1000;
 
 var TimeStream = function () {};
 

@@ -12,7 +12,6 @@ var times = function (n, callback) {
 $(document).ready(function () {
 
   times(100, function () { new Planet(); });
-
   var time = new TimeStream();
 
   setInterval(function () {
