@@ -43,6 +43,14 @@ Vector.prototype.invertX = function () {
   return new Vector(this.x, this.y * -1);
 };
 
+Vector.prototype.invert = function () {
+  return this.scale(-1);
+};
+
+Vector.prototype.dotProduct = function (other) {
+  return (this.x * other.x) + (this.y * other.y);
+};
+
 var GravitationalConstant = 6.674e-8;
 
 var gravity = function Gravity(planet1, planet2) {
