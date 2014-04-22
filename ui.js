@@ -9,13 +9,27 @@ var times = function (n, callback) {
   }
 };
 
-$(document).ready(function () {
+var UI = function () {
+  this.time = new TimeStream();
+  this.intervalID = null;
+};
 
-  times(100, function () { new Planet(); });
-  var time = new TimeStream();
-
-  setInterval(function () {
-    time.stepTime();
-    _.invoke(Planet.planets, "render");
+UI.prototype.run = function () {
+  var that = this;
+  this.intervalID = setInterval(function () {
+    that.time.stepTime();
+    _.invoke(Planet.planets, "render", $(window).width(), $(window).height());
   }, 17);
+};
+
+UI.prototype.addPlanet = function (mass, position, radius, color, velocity) {
+  //new Planet(mass, position, velocity, radius, color);
+  new Planet();
+};
+
+$(document).ready(function () {
+  var ui = new UI();
+  times(100, function () { ui.addPlanet(); });
+
+  ui.run();
 });
