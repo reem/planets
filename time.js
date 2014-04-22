@@ -1,5 +1,5 @@
 var _ = _;
-var TIME = 10;
+var TIME = 0.1;
 
 var TimeStream = function () {};
 
