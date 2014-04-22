@@ -35,7 +35,7 @@ Vector.prototype.isEqual = function (other) {
   return this.x === other.x && this.y === other.y;
 };
 
-var GravitationalConstant = 6.674e-11;
+var GravitationalConstant = 6.674e-10;
 
 var gravity = function Gravity(planet1, planet2) {
   var gravitation =
@@ -59,11 +59,11 @@ var Planet = function (mass, position, velocity, radius, color) { // Fill in arg
   // Internal math stuff
   this.mass = mass === undefined ? 1e17 : mass;
   this.position =
-    position || new Vector(Math.random() * 1000000000,
-                           Math.random() * 1000000000);
+    position || new Vector(Math.random() * 10000000,
+                           Math.random() * 10000000);
   this.velocity =
-    velocity || new Vector((Math.random() - 0.5) * 400,
-                           (Math.random() - 0.5) * 400);
+    velocity || new Vector((Math.random() - 0.5) * 80,
+                           (Math.random() - 0.5) * 80);
   Planet.planets.push(this);
   this.$node.appendTo($(document.body));
 };
@@ -87,7 +87,7 @@ Planet.prototype.updatePosition = function () {
   this.position = this.position.add(this.velocity.scale(TIME));
 };
 
-var ScaleFactor = 0.000001;
+var ScaleFactor = 0.0001;
 
 Planet.prototype.render = function () {
   var styleSettings = {
@@ -98,6 +98,5 @@ Planet.prototype.render = function () {
     width: this.radius * 2,
     height: this.radius * 2
   };
-  debugger;
   this.$node.css(styleSettings);
 };
