@@ -35,7 +35,15 @@ Vector.prototype.isEqual = function (other) {
   return this.x === other.x && this.y === other.y;
 };
 
-var GravitationalConstant = 6.674e-10;
+Vector.prototype.invertX = function () {
+  return new Vector(this.x * -1, this.y);
+};
+
+Vector.prototype.invertX = function () {
+  return new Vector(this.x, this.y * -1);
+};
+
+var GravitationalConstant = 6.674e-8;
 
 var gravity = function Gravity(planet1, planet2) {
   var gravitation =
@@ -46,8 +54,7 @@ var gravity = function Gravity(planet1, planet2) {
     .scale(gravitation);
 };
 
-var Planet = function (mass, position, velocity, radius, color) { // Fill in args later.
-  // Display properties
+var Planet = function (mass, position, velocity, radius, color) {
   this.$node = $("<div class='planet'></div>");
   this.radius = radius || 10;
   this.color = color || "orange";
@@ -57,13 +64,13 @@ var Planet = function (mass, position, velocity, radius, color) { // Fill in arg
   });
 
   // Internal math stuff
-  this.mass = mass === undefined ? 1e17 : mass;
+  this.mass = mass === undefined ? 1e18 : mass;
   this.position =
-    position || new Vector(Math.random() * 10000000,
-                           Math.random() * 10000000);
+    position || new Vector(Math.random() * 1000000,
+                           Math.random() * 1000000);
   this.velocity =
-    velocity || new Vector((Math.random() - 0.5) * 80,
-                           (Math.random() - 0.5) * 80);
+    velocity || new Vector((Math.random() - 0.5) * 800,
+                           (Math.random() - 0.5) * 800);
   Planet.planets.push(this);
   this.$node.appendTo($(document.body));
 };
@@ -76,25 +83,44 @@ Planet.prototype.updateVelocity = function () {
     if (this === planet) { return; }
     gravityVectors.push(gravity(this, planet));
   }, this);
+
   this.velocity = _.reduce(gravityVectors,
     function (memo, gravVector) {
       return memo.add(gravVector.scale(TIME/this.mass));
     },
   this.velocity, this);
+
+  this.boundsCheck();
 };
 
 Planet.prototype.updatePosition = function () {
   this.position = this.position.add(this.velocity.scale(TIME));
 };
 
-var ScaleFactor = 0.0001;
+var ScaleFactor = 0.001;
 
-Planet.prototype.render = function () {
+Planet.prototype.boundsCheck = function () {
+  // Check x bounds
+  if (this.position.x * ScaleFactor >= $(window).width() - this.radius - 20) {
+    this.velocity.x = -Math.abs(this.velocity.x);
+  } else if (this.position.x * ScaleFactor <= 20 + this.radius) {
+    this.velocity.x = Math.abs(this.velocity.x);
+  }
+
+  // Check y bounds
+  if (this.position.y * ScaleFactor >= $(window).height() - this.radius - 20) {
+    this.velocity.y = -Math.abs(this.velocity.y);
+  } else if (this.position.y * ScaleFactor <= 20 + this.radius) {
+    this.velocity.y = Math.abs(this.velocity.y);
+  }
+};
+
+Planet.prototype.render = function (maxWidth, maxHeight) {
   var styleSettings = {
     "border-radius": this.radius,
     "background-color": this.color,
-    top: (this.position.y * ScaleFactor) - this.radius,
-    left: (this.position.x * ScaleFactor) - this.radius,
+    top: Math.min(maxHeight - this.radius * 2, (this.position.y * ScaleFactor) - this.radius),
+    left: Math.min(maxWidth - this.radius * 2, (this.position.x * ScaleFactor) - this.radius),
     width: this.radius * 2,
     height: this.radius * 2
   };
