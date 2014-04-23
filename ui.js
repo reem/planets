@@ -16,20 +16,22 @@ var UI = function () {
 
 UI.prototype.run = function () {
   var that = this;
-  this.intervalID = setInterval(function () {
-    that.time.stepTime();
-    _.invoke(Planet.planets, "render", $(window).width(), $(window).height());
-  }, 17);
+  this.time.stepTime();
+  _.invoke(Planet.planets, "render", $(window).width(), $(window).height());
+  this.intervalID = window.requestAnimationFrame(function () {
+    that.run();
+  });
 };
 
-UI.prototype.addPlanet = function (mass, position, radius, color, velocity) {
+UI.prototype.addPlanet = function (mass, position, velocity, radius, color) {
   //new Planet(mass, position, velocity, radius, color);
-  new Planet();
+  new Planet(mass, position, velocity, radius, color);
 };
 
 $(document).ready(function () {
   var ui = new UI();
-  times(100, function () { ui.addPlanet(); });
+  times(100, function () { ui.addPlanet(undefined, undefined, undefined,
+                                      Math.pow(Math.random(), 3) * 5 + 4); });
 
   ui.run();
 });

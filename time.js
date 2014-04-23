@@ -1,5 +1,5 @@
 var _ = _;
-var TIME = 0.1;
+var TIME = 0.3;
 
 var TimeStream = function () {};
 
@@ -9,6 +9,7 @@ TimeStream.prototype.stepTime = function () {
 };
 
 TimeStream.prototype.updateVelocities = function () {
+  _.invoke(Planet.planets, "computeVelocityChange");
   _.invoke(Planet.planets, "updateVelocity");
 };
 
