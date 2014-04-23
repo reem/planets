@@ -74,11 +74,11 @@ var windowWidth = $(window).width();
 var windowHeight = $(window).height();
 
 var gravity = function Gravity(planet1, planet2) {
+  var distance = Math.max(planet1.position.distance(planet2.position),
+                          (planet1.radius + planet2.radius) / ScaleFactor);
   var gravitation =
     (GravitationalConstant * planet1.mass * planet2.mass) /
-    Math.pow(planet1.position.distance(planet2.position,
-      windowWidth / ScaleFactor, windowHeight / ScaleFactor)
-    , 2);
+    Math.pow(distance, 2);
   return planet2.position.subtract(planet1.position)
     .normalize()
     .scale(gravitation);
@@ -86,46 +86,94 @@ var gravity = function Gravity(planet1, planet2) {
 
 var Planet = function (mass, position, velocity, radius, color) {
   this.$node = $("<div class='planet'></div>");
-  this.radius = radius || 10;
+  this.radius = radius || 7;
   this.color = color || "orange";
   this.$node.css({
     "border-radius": this.radius,
-    "color": this.color,
+    "color": this.color
   });
 
   // Internal math stuff
-  this.mass = mass === undefined ? 1e16 : mass;
+  this.mass = mass === undefined ? 0.8e16 : mass;
   this.position =
-    position || new Vector(Math.random() * 9500000,
-                           Math.random() * 9500000);
+    position || new Vector(Math.random() * (windowWidth - this.radius) / ScaleFactor,
+                           Math.random() * (windowHeight - this.radius) / ScaleFactor);
   this.velocity =
-    velocity || new Vector(0, 0);
+    velocity || new Vector((Math.random() - 0.5) * Math.pow(Math.random(), 3) * 200000,
+                           (Math.random() - 0.5) * Math.pow(Math.random(), 3) * 200000);
   Planet.planets.push(this);
+  this.velocityChange = new Vector(0, 0);
   this.$node.appendTo($(document.body));
 };
 
 Planet.planets = [];
 
 Planet.prototype.updateVelocity = function () {
-  var gravityVectors = [];
-  _.each(Planet.planets, function (planet) {
-    if (this === planet) { return; }
-    gravityVectors.push(gravity(this, planet));
-  }, this);
-
-  this.collisionCheck();
-
-  this.velocity = _.reduce(gravityVectors,
-    function (memo, gravVector) {
-      return memo.add(gravVector.scale(TIME/this.mass));
-    },
-  this.velocity, this);
-
+  this.velocity = this.velocity.add(this.velocityChange);
   this.boundsCheck();
 };
 
+Planet.prototype.computeVelocityChange = function () {
+  this.velocityChange = new Vector(0, 0);
+  var blockedDirections = [];
+  
+  _.each(Planet.planets, function (otherPlanet) {
+    if (this !== otherPlanet) {
+      var netVelocityChange = this.getGravityVelocityChange(otherPlanet)
+            .add(this.getCollisionVelocityChange(otherPlanet));
+      //var positionDifference = otherPlanet.position.subtract(this.position);
+      if (/*netVelocityChange.dotProduct(positionDifference) > 0
+          && */this.position.distance(otherPlanet.position) * ScaleFactor <
+          this.radius + otherPlanet.radius) {
+        blockedDirections.push(otherPlanet.position
+                               .subtract(this.position).normalize());
+      }
+      this.velocityChange = this.velocityChange.add(netVelocityChange);
+    }
+  }, this);
+
+  _.each(blockedDirections, function(direction) {
+    var directionComponent = this.velocityChange.dotProduct(direction);
+    if (directionComponent > 0) {
+      this.velocityChange = this.velocityChange
+      .subtract(direction.scale(directionComponent));
+    }
+  }, this);
+};
+
+Planet.prototype.getGravityVelocityChange = function (otherPlanet) {
+  return gravity(otherPlanet, this).scale(-TIME / this.mass);
+};
+
+Planet.prototype.getCollisionVelocityChange = function(otherPlanet) {
+  if (this.position.distance(otherPlanet.position) * ScaleFactor <
+      this.radius + otherPlanet.radius) {
+    var sepUnit = otherPlanet.position.subtract(this.position).normalize();
+    var thisVelocityCompMag = this.velocity.dotProduct(sepUnit);
+    var otherVelocityCompMag = otherPlanet.velocity.dotProduct(sepUnit);
+    if (thisVelocityCompMag > otherVelocityCompMag) {
+      var thisVelocityComp = sepUnit.scale(thisVelocityCompMag);
+      var otherVelocityComp = sepUnit.scale(otherVelocityCompMag);
+      return thisVelocityComp.scale(-1).add((otherVelocityComp).scale(0.8));
+    }
+  }
+  return new Vector(0, 0);
+};
+  
+
 Planet.prototype.updatePosition = function () {
   this.position = this.position.add(this.velocity.scale(TIME));
+  _.each(Planet.planets, function(otherPlanet) {
+    var collisionRatio =
+          this.position.distance(otherPlanet.position) * ScaleFactor /
+          (this.radius + otherPlanet.radius);
+    if (collisionRatio < 1 && this !== otherPlanet) {
+      var positionDifference = otherPlanet.position.subtract(this.position);
+      this.position = this.position.subtract(
+        positionDifference.scale(0.9 * (1 - collisionRatio))
+      );
+    }
+  }, this);
 };
 
 var ScaleFactor = 0.0001;
